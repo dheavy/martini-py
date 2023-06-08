@@ -5,6 +5,10 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from martini import create_app
+from martini.config import settings
+from martini.database import Base
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -18,7 +22,13 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
+
+# create a new app instance to ensure the relevant models are loaded
+fastapi_app = create_app()
+
+# ensure the new models are discovered by Alembic
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -58,7 +68,7 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
