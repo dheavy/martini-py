@@ -16,7 +16,7 @@ def create_app() -> FastAPI:
     app = FastAPI()
 
     # do this before loading routes
-    from martini.celery_utils import create_celery
+    from martini.celery import create_celery
     app.celery_app = create_celery()
 
     from martini.ws import ws_router                   # new

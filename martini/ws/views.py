@@ -4,10 +4,10 @@ from fastapi import WebSocket
 
 from . import ws_router
 from martini import broadcast
-from martini.celery_utils import get_task_info
+from martini.celery import get_task_info
 
 
-@ws_router.websocket("/ws/task/status/{task_id}")
+@ws_router.websocket("/task/status/{task_id}")
 async def ws_task_status(websocket: WebSocket):
     await websocket.accept()
 
