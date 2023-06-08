@@ -4,9 +4,15 @@ services:
   web:
     build:
       context: .
-      dockerfile: iac/local/fastapi/Dockerfile
+      dockerfile: iac/Dockerfile
     image: martini_web
     command: /start
+    environment:
+      - FASTAPI_ENV
+      - DATABASE_URL
+      - CELERY_BROKER_URL
+      - CELERY_RESULT_BACKEND
+      - WS_MESSAGE_QUEUE
     volumes:
       - .:/app
     ports:
@@ -22,9 +28,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgres/data/
     environment:
-      - POSTGRES_DB=martini
-      - POSTGRES_USER=martini
-      - POSTGRES_PASSWORD=martini
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "martini"]
       interval: 10s
@@ -51,7 +57,7 @@ services:
   celery_worker:
     build:
       context: .
-      dockerfile: iac/local/fastapi/Dockerfile
+      dockerfile: iac/Dockerfile
     image: martini_worker
     command: /start-celery-worker
     volumes:
@@ -62,12 +68,13 @@ services:
     links:
       - postgres:db
     environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL
+      - DATABASE_URL
 
   celery_beat:
     build:
       context: .
-      dockerfile: iac/local/fastapi/Dockerfile
+      dockerfile: iac/Dockerfile
     image: martini_beat
     command: /start-celery-beat
     volumes:
@@ -78,12 +85,13 @@ services:
     links:
       - postgres:db
     environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL
+      - DATABASE_URL
 
   celery_flower:
     build:
       context: .
-      dockerfile: iac/local/fastapi/Dockerfile
+      dockerfile: iac/Dockerfile
     image: martini_flower
     command: /start-celery-flower
     volumes:
@@ -96,7 +104,8 @@ services:
     links:
       - postgres:db
     environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL
+      - DATABASE_URL
 
 volumes:
   postgres_data:

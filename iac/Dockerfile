@@ -18,27 +18,27 @@ RUN apt-get update \
 COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-COPY iac/local/fastapi/entrypoint /entrypoint
+COPY iac/entrypoint /entrypoint
 # process line endings for Windows, convert to UNIX format
 RUN sed -i 's/\r$//g' /entrypoint
 RUN chmod +x /entrypoint
 
-COPY iac/local/fastapi/start /start
+COPY iac/start /start
 # process line endings for Windows, convert to UNIX format
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
 
-COPY iac/local/fastapi/celery/worker/start /start-celery-worker
+COPY iac/celery/worker/start /start-celery-worker
 # process line endings for Windows, convert to UNIX format
 RUN sed -i 's/\r$//g' /start-celery-worker
 RUN chmod +x /start-celery-worker
 
-COPY iac/local/fastapi/celery/beat/start /start-celery-beat
+COPY iac/celery/beat/start /start-celery-beat
 # process line endings for Windows, convert to UNIX format
 RUN sed -i 's/\r$//g' /start-celery-beat
 RUN chmod +x /start-celery-beat
 
-COPY iac/local/fastapi/celery/flower/start /start-celery-flower
+COPY iac/celery/flower/start /start-celery-flower
 # process line endings for Windows, convert to UNIX format
 RUN sed -i 's/\r$//g' /start-celery-flower
 RUN chmod +x /start-celery-flower
