@@ -1,5 +1,4 @@
-import os
-from typing import List, Optional
+from typing import Optional
 
 from langchain.docstore.document import Document
 
@@ -12,28 +11,20 @@ logger = get_task_logger(__name__)
 
 
 @shared_task(bind=True)
-async def store_embeddings(
+def store_embeddings(
     self,
-    docs: List[Document],
-    index_name: str,
+    docs: list[str] = None,
+    index_name: str = None,
     namespace: Optional[str] = None,
-    dimension: int = os.environ.get("EMBEDDINGS_DIMENSION_OPENAI")
+    dimension: int = 0,
 ):
     try:
-        # Recceive initialized Pinecone instance from upload_embeddings.
-        pinecone_instance = await upload_embeddings(
-            docs,
-            index_name,
-            namespace,
-            dimension
+        upload_embeddings(
+            docs=docs,
+            index_name=index_name,
+            namespace=namespace,
+            dimension=dimension,
         )
-
-        # Wait for Pinecone to index embeddings.
-        index = pinecone_instance.Index(index_name)
-        while not index.describe_index_stats()["total_vector_count"] == len(docs):
-            logger.info("waiting for Pinecone to index embeddings")
-            os.sleep(5)
-
     except Exception as e:
-        logger.error("embeddings storage failed, retrying after 5 seconds")
+        logger.error('Embeddings storage failed, retrying after 5 seconds. Error: %s', e)
         raise self.retry(exc=e, countdown=5)

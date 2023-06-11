@@ -19,6 +19,9 @@ def create_app() -> FastAPI:
     from martini.celery import create_celery
     app.celery_app = create_celery()
 
+    from martini.pdf import pdf_router
+    app.include_router(pdf_router)
+
     from martini.ws import ws_router                   # new
     app.include_router(ws_router)
 

@@ -7,11 +7,11 @@ from martini import broadcast
 from martini.celery import get_task_info
 
 
-@ws_router.websocket("/task/status/{task_id}")
+@ws_router.websocket('/task/status/{task_id}')
 async def ws_task_status(websocket: WebSocket):
     await websocket.accept()
 
-    task_id = websocket.scope["path_params"]["task_id"]
+    task_id = websocket.scope['path_params']['task_id']
 
     async with broadcast.subscribe(channel=task_id) as subscriber:
         # Check in case the task already finished.

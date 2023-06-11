@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 pdf_router = APIRouter(
-    prefix="/pdf",
+    prefix='/pdf',
 )
 
-from . import tasks # noqa
+from . import tasks, views # noqa
