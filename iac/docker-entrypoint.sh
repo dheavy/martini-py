@@ -17,7 +17,7 @@ import psycopg2
 import urllib.parse as urlparse
 import os
 
-url = urlparse.urlparse(os.environ['DATABASE_URL'])
+url = urlparse.urlparse(os.environ['POSTGRES_URL'])
 dbname = url.path[1:]
 user = url.username
 password = url.password

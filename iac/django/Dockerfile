@@ -14,35 +14,39 @@ RUN apt-get update \
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
 
-# requirements should be added before code, to leverage Docker cache
-COPY ./requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
-
-COPY iac/entrypoint /entrypoint
-# process line endings for Windows, convert to UNIX format
-RUN sed -i 's/\r$//g' /entrypoint
-RUN chmod +x /entrypoint
-
-COPY iac/start /start
-# process line endings for Windows, convert to UNIX format
-RUN sed -i 's/\r$//g' /start
-RUN chmod +x /start
-
-COPY iac/celery/worker/start /start-celery-worker
-# process line endings for Windows, convert to UNIX format
-RUN sed -i 's/\r$//g' /start-celery-worker
-RUN chmod +x /start-celery-worker
-
-COPY iac/celery/beat/start /start-celery-beat
-# process line endings for Windows, convert to UNIX format
-RUN sed -i 's/\r$//g' /start-celery-beat
-RUN chmod +x /start-celery-beat
-
-COPY iac/celery/flower/start /start-celery-flower
-# process line endings for Windows, convert to UNIX format
-RUN sed -i 's/\r$//g' /start-celery-flower
-RUN chmod +x /start-celery-flower
-
 WORKDIR /app
 
-ENTRYPOINT ["/entrypoint"]
+# requirements should be added before code, to leverage Docker cache
+COPY ./requirements.txt ./requirements.txt
+RUN pip install -r ./requirements.txt
+
+COPY iac/docker-entrypoint.sh ./docker-entrypoint.sh
+# process line endings for Windows, convert to UNIX format
+RUN sed -i 's/\r$//g' ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
+COPY iac/celery/worker/start.sh ./start-celery-worker.sh
+# process line endings for Windows, convert to UNIX format
+RUN sed -i 's/\r$//g' ./start-celery-worker.sh
+RUN chmod +x ./start-celery-worker.sh
+
+COPY iac/celery/beat/start.sh ./start-celery-beat.sh
+# process line endings for Windows, convert to UNIX format
+RUN sed -i 's/\r$//g' ./start-celery-beat.sh
+RUN chmod +x ./start-celery-beat.sh
+
+COPY iac/celery/flower/start.sh ./start-celery-flower.sh
+# process line endings for Windows, convert to UNIX format
+RUN sed -i 's/\r$//g' ./start-celery-flower.sh
+RUN chmod +x ./start-celery-flower.sh
+
+COPY iac/django/start.sh ./start.sh
+# process line endings for Windows, convert to UNIX format
+RUN sed -i 's/\r$//g' ./start.sh
+RUN chmod +x ./start.sh
+
+COPY martini ./martini
+
+EXPOSE 8000
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

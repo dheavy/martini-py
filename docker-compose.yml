@@ -1,18 +1,23 @@
 version: '3.8'
 
 services:
+  # Django application exposing API
   web:
     build:
       context: .
-      dockerfile: iac/Dockerfile
+      dockerfile: iac/django/Dockerfile
     image: martini_web
-    command: /start
+    command: ./start.sh
     environment:
-      - FASTAPI_ENV
-      - DATABASE_URL
+      - APP_ENV
+      - POSTGRES_URL
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_PORT
       - CELERY_BROKER_URL
-      - result_backend
-      - WS_MESSAGE_QUEUE
+      - CELERY_RESULT_BACKEND
       - OPENAI_API_KEY
       - PINECONE_API_KEY
       - PINECONE_API_ENV
@@ -20,15 +25,26 @@ services:
       - EMBEDDINGS_DEFAULT_METRIC
       - EMBEDDINGS_INDEX_NAME_LENGTH
     volumes:
-      - .:/app
+      - static_volume:/app/martini/static
     ports:
-      - 8010:8000
+      - "8000:8000"
     depends_on:
       - redis
       - postgres
-    links:
-      - postgres:db
 
+  # Nginx reverse proxy for the Django application
+  web_nginx:
+    build:
+      context: .
+      dockerfile: iac/django/Dockerfile.nginx
+    volumes:
+      - static_volume:/app/martini/static
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+  # Postgres database for the application
   postgres:
     image: postgres:14-alpine
     volumes:
@@ -43,6 +59,7 @@ services:
       timeout: 5s
       retries: 3
 
+  # Redis database for Celery (distributed task queue)
   redis:
     image: redis:6-alpine
     healthcheck:
@@ -60,56 +77,53 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
 
+  # Celery worker offloading tasks from the Django application
   celery_worker:
     build:
       context: .
-      dockerfile: iac/Dockerfile
+      dockerfile: iac/django/Dockerfile
     image: martini_worker
-    command: /start-celery-worker
-    volumes:
-      - .:/app
+    command: ./start-celery-worker.sh
     depends_on:
       - redis_proxy
       - postgres
     links:
       - postgres:db
     environment:
-      - CELERY_BROKER_URL
-      - result_backend
-      - DATABASE_URL
-      - OPENAI_API_KEY
-      - PINECONE_API_KEY
-      - PINECONE_API_ENV
-      - EMBEDDINGS_DIMENSION_OPENAI
-      - EMBEDDINGS_DEFAULT_METRIC
-      - EMBEDDINGS_INDEX_NAME_LENGTH
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_API_ENV=${PINECONE_API_ENV}
+      - EMBEDDINGS_DIMENSION_OPENAI=${EMBEDDINGS_DIMENSION_OPENAI}
+      - EMBEDDINGS_DEFAULT_METRIC=${EMBEDDINGS_DEFAULT_METRIC}
+      - EMBEDDINGS_INDEX_NAME_LENGTH=${EMBEDDINGS_INDEX_NAME_LENGTH}
 
+  # Celery beat scheduler for periodic tasks
   celery_beat:
     build:
       context: .
-      dockerfile: iac/Dockerfile
+      dockerfile: iac/django/Dockerfile
     image: martini_beat
-    command: /start-celery-beat
-    volumes:
-      - .:/app
+    command: ./start-celery-beat.sh
     depends_on:
       - redis_proxy
       - postgres
     links:
       - postgres:db
     environment:
-      - CELERY_BROKER_URL
-      - result_backend
-      - DATABASE_URL
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - POSTGRES_URL=${POSTGRES_URL}
 
+  # Celery flower monitoring tool
   celery_flower:
     build:
       context: .
-      dockerfile: iac/Dockerfile
+      dockerfile: iac/django/Dockerfile
     image: martini_flower
-    command: /start-celery-flower
-    volumes:
-      - .:/app
+    command: ./start-celery-flower.sh
     ports:
       - 5557:5555
     depends_on:
@@ -119,8 +133,9 @@ services:
       - postgres:db
     environment:
       - CELERY_BROKER_URL
-      - result_backend
-      - DATABASE_URL
+      - CELERY_RESULT_BACKEND
+      - POSTGRES_URL
 
 volumes:
-  postgres_data:
+  static_volume: # volume for static files
+  postgres_data: # volume for postgres database
