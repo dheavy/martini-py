@@ -4,9 +4,10 @@ from typing import Optional
 
 import pinecone
 from celery.utils.log import get_task_logger
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
 
-from martini.database import Base, DateTime, SessionLocal
+from martini.database import Base, SessionLocal
+
 
 
 class Pdf(Base):
@@ -15,60 +16,59 @@ class Pdf(Base):
     id = Column(String(128), primary_key=True, index=True, nullable=False)
     index_name = Column(String(50), unique=True, index=True, nullable=False)
     filename = Column(String(250), nullable=False)
-    namspace = Column(String(200))
+    namespace = Column(String(200))
     vector_count = Column(Integer)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):
-        return '<Pdf(id={%s}, index_name={%s}, filename={%s}, vector_count={%s})>' % (
+        return '<Pdf(id={%s}, index_name={%s}, filename={%s}, namespace={%s}, vector_count={%s})>' % (
             self.id,
             self.index_name,
             self.filename,
+            self.namespace,
             self.vector_count
         )
 
-def save_pdf_instance(
-    id: str,
-    index_name: str,
-    filename: str,
-    namespace: Optional[str] = '',
-    vector_count: int = 0,
-) -> Pdf:
-    '''
-    Save a PDF instance in the database, representing a PDF file
-    that has been uploaded and processed.
-    '''
-    session = SessionLocal()
+    def save(self):
+        '''
+        Save a PDF instance in the SQL database, representing a PDF file
+        that has been uploaded and had its content stored in a vector database.
+        '''
+        session = SessionLocal()
+        session.add(self)
+        session.commit()
+        session.refresh(self)
+        session.close()
+        return self
 
-    pdf = Pdf(
-        id=id,
-        index_name=index_name,
-        filename=filename,
-        namespace=namespace,
-        vector_count=vector_count,
-    )
+    @classmethod
+    def get_by(self, key: str, value: str):
+        '''
+        Class method to retrieve a PDF instance from the SQL database,
+        either by id or index_name.
 
-    session.add(pdf)
-    session.commit()
-    session.refresh(pdf)
-    session.close()
+        Example:
+        >>> Pdf.get_by('index_name', 'my-pdf-index-name')
+        '''
+        session = SessionLocal()
+        query = session.query(Pdf)
 
-    return pdf
+        if key == 'id':
+            query = query.filter_by(id=value)
+        elif key == 'index_name':
+            query = query.filter_by(index_name=value)
+        else:
+            raise ValueError(f'Pdf.get_by - invalid filter key: {key}')
 
+        instance = query.first()
+        session.close()
 
-def get_pdf_instance_by(key: str, value: str) -> Pdf:
-    session = SessionLocal()
-    query = session.query(Pdf)
+        if instance is not None:
+            return instance
+        else:
+            raise ValueError(f'Pdf.get_by - no instance found with {key}={value}')
 
-    if key == 'id':
-        query = query.filter_by(id=value)
-    elif key == 'index_name':
-        query = query.filter_by(index_name=value)
-    else:
-        raise ValueError(f'get_pdf_instance_by - invalid filter key: {key}')
-
-    return query.first()
 
 
 def save_pdf_and_embeddings(
@@ -77,6 +77,9 @@ def save_pdf_and_embeddings(
     dimension: int = 0,
     namespace: Optional[str] = ''
 ):
+    '''
+    Store embeddings in Pinecone and save model representing PDF instance in SQL database.
+    '''
     from langchain.embeddings.openai import OpenAIEmbeddings
     from langchain.vectorstores import Pinecone
 
@@ -113,14 +116,15 @@ def save_pdf_and_embeddings(
         total_uploaded = int(index.describe_index_stats()['total_vector_count'])
         logger.info(f'Done! Added {total_uploaded} embeddings ({len(docs)} documents) to Pinecone index "{index_name}"')
 
-        return save_pdf_instance(
+        pdf = Pdf(
             id=index_name,
             index_name=index_name,
             filename=index_name,
             namespace=namespace,
             vector_count=total_uploaded
         )
+        return pdf.save()
     # Otherwise just return the existing Pdf instance.
     else:
         logger.info(f'Index found, using existing Pinecone index: {index_name}')
-        return get_pdf_instance_by('index_name', index_name)
+        return Pdf.get_by('index_name', index_name)
