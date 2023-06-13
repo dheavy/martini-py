@@ -8,14 +8,13 @@ broadcast = Broadcast(settings.WS_MESSAGE_QUEUE)
 
 
 def create_app() -> FastAPI:
-    """
+    '''
     Factory function: create a FastAPI instance and return it.
     Also creates a Celery app instance and attaches it to the FastAPI app instance,
     and declares the routes, including a WebSocket route for Celery task status updates.
-    """
+    '''
     app = FastAPI()
 
-    # do this before loading routes
     from martini.celery import create_celery
     app.celery_app = create_celery()
 

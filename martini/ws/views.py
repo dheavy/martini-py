@@ -23,10 +23,10 @@ async def ws_task_status(websocket: WebSocket):
 
 
 async def update_celery_task_status(task_id: str):
-    """
+    '''
     Called by Celery worker in task_postrun signal handler,
     that is, after the task has finished.
-    """
+    '''
     await broadcast.connect()
     await broadcast.publish(
         channel=task_id,

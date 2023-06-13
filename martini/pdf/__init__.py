@@ -4,4 +4,4 @@ pdf_router = APIRouter(
     prefix='/pdf',
 )
 
-from . import tasks, views # noqa
+from . import tasks, views, models # noqa
