@@ -23,6 +23,9 @@ gunicorn = "^20.1.0"
 flower = "^1.2.0"
 uvicorn = "^0.22.0"
 
+[tool.poetry.scripts]
+docker-reset = "iac.scripts.scripts:reset"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
