@@ -12,7 +12,8 @@ if [ "$1" == "-h" ]; then
     fi
     mkdir apps/$1
     python manage.py startapp $1 apps/$1
-    echo "Success! The app $1 has been aded, don't forget to add INSTALLED_APPS += ['apps.$1'] in your project's settings.py"
+    echo "Success! The app $1 has been aded, don't forget to add INSTALLED_APPS += ['apps.$1'] in your project's settings.py."
+    echo "Also, don't forget to update the 'name' of the 'apps.$1' app in apps/$1/apps.py."
 else
     echo "Error! One parameter is expected: app_name"
 fi
