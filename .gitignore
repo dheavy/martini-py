@@ -160,5 +160,5 @@ cython_debug/
 #.idea/
 
 # App
-static/uploads/*
-!static/uploads/.gitkeep
+martini/static/uploads/*
+!martini/static/uploads/.gitkeep
