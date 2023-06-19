@@ -24,7 +24,8 @@ flower = "^1.2.0"
 uvicorn = "^0.22.0"
 
 [tool.poetry.scripts]
-docker-reset = "iac.scripts.scripts:reset"
+manage = "iac.scripts.scripts:manage"
+docker-reset = "iac.scripts.scripts:docker_reset"
 
 [build-system]
 requires = ["poetry-core"]
