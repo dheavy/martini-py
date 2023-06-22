@@ -10,7 +10,8 @@ class DocumentCollection(models.Model):
     and that can be searched together.
     DocumentCollection stores its documents in a single Qdrant collection.
     '''
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=75, unique=True)
+    slug = models.SlugField(unique=True)
     description = models.TextField(null=True, blank=True)
 
     def __str__(self):

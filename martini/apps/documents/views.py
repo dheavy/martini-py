@@ -1,3 +1,5 @@
+from django.utils.text import slugify
+
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -29,8 +31,10 @@ class UnstructuredDocumentViewSet(viewsets.ModelViewSet):
         task = store_embeddings.delay(udoc.file.path)
         udoc.task_id = task.id
 
-        # Bind to the default DocumentCollection before saving.
-        udoc.collection = DocumentCollection.objects.get(name='default')
+        # If not specified, assign the document to the default collection.
+        if not udoc.collection:
+            default_collection = DocumentCollection.objects.get(slug='default')
+            udoc.collection = default_collection
 
         udoc.save()
 
@@ -53,5 +57,11 @@ class UnstructuredDocumentViewSet(viewsets.ModelViewSet):
 
 
 class DocumentCollectionViewSet(viewsets.ModelViewSet):
-    queryset = DocumentCollection.objects.all()
+    # Prefetch related documents to avoid N+1 queries in nested serializers.
+    queryset = DocumentCollection.objects.all().prefetch_related('documents')
     serializer_class = DocumentCollectionSerializer
+
+    def perform_create(self, serializer):
+        name = serializer.validated_data['name']
+        slug = slugify(name)
+        serializer.save(slug=slug)

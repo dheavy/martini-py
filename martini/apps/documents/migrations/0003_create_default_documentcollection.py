@@ -7,6 +7,7 @@ def create_default_documentcollection(apps, schema_editor):
     DocumentCollection = apps.get_model('documents', 'DocumentCollection')
     DocumentCollection.objects.create(
         name='default',
+        slug='default',
         description='Default document collection',
     )
 
