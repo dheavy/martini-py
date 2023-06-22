@@ -13,6 +13,10 @@ def manage():
     args = sys.argv[1:]  # get command-line arguments
     subprocess.run(['bash', f'{dir_path}/manage.sh'] + args, check=True)  # pass arguments to bash script
 
+def start_app():
+    args = sys.argv[1:]  # get command-line arguments
+    subprocess.run(['bash', f'{dir_path}/start-app.sh'] + args, check=True)
+
 def docker_reset():
     '''
     Stops, then turns off and removes all Docker containers, images and volumes for the application.

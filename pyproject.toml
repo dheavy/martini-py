@@ -27,6 +27,7 @@ drf-yasg = "^1.21.6"
 
 [tool.poetry.scripts]
 manage = "iac.scripts.scripts:manage"   # must be run in the "martini" directory (where manage.py is located)
+start-app = "iac.scripts.scripts:start_app"   # must be run in the "martini" directory (where manage.py is located)
 docker-reset = "iac.scripts.scripts:docker_reset"
 docker-down = "iac.scripts.scripts:docker_down"
 docker-up = "iac.scripts.scripts:docker_up"
