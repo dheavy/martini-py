@@ -10,8 +10,8 @@ class DocumentCollection(models.Model):
     and that can be searched together.
     DocumentCollection stores its documents in a single Qdrant collection.
     '''
-    name = models.CharField(max_length=75, unique=True)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=75, unique=True, null=True)
+    slug = models.SlugField(unique=True, null=True)
     description = models.TextField(null=True, blank=True)
 
     def __str__(self):
@@ -19,7 +19,7 @@ class DocumentCollection(models.Model):
 
 
 class UnstructuredDocument(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, default='Untitled')
     description = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to='static/uploads/')
     task_id = models.CharField(max_length=255, blank=True, null=True)

@@ -1,10 +1,11 @@
+import os
+
 from django.utils.text import slugify
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from celery.result import AsyncResult
 from celery.result import AsyncResult
 
 from .models import UnstructuredDocument, DocumentCollection
@@ -13,6 +14,7 @@ from .serializers import (
     UnstructuredDocumentSerializer,
     DocumentCollectionSerializer
 )
+from .qdrant import create_vdb_collection, delete_vdb_collection
 
 
 class UnstructuredDocumentViewSet(viewsets.ModelViewSet):
@@ -62,6 +64,22 @@ class DocumentCollectionViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentCollectionSerializer
 
     def perform_create(self, serializer):
+        '''
+        Create slug and save it as part of the instance.
+        Create a Qdrant collection for the DocumentCollection.
+        '''
         name = serializer.validated_data['name']
         slug = slugify(name)
-        serializer.save(slug=slug)
+        try:
+            create_vdb_collection(slug)
+            serializer.save(slug=slug)
+        except Exception as e:
+            raise e
+
+    def perform_destroy(self, instance):
+        try:
+            delete_vdb_collection(instance.slug)
+            return super().perform_destroy(instance)
+        except Exception as e:
+            raise e
+

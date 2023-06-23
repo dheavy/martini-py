@@ -1,3 +1,5 @@
+import os
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
@@ -10,7 +12,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from qdrant_client import QdrantClient
 
+from .qdrant import qd_client
+
 logger = get_task_logger(__name__)
+qd_client = QdrantClient(url=os.environ.get('QDRANT_URL'), prefer_grpc=True)
 
 
 def chunk_document(filepath: str) -> list[str]:
@@ -29,18 +34,18 @@ def get_embeddings_model() -> OpenAIEmbeddings:
     <|endoftext|> is a special token that indicates the end of a document in OpenAI's embeddings.
     We need to set this as `allowed_special` here for tiktoken to parse it without error.
     '''
-    embeddings = OpenAIEmbeddings(
+    return OpenAIEmbeddings(
         openai_api_key=os.environ.get('OPENAI_API_KEY'),
         allowed_special={'<|endoftext|>'}
     )
 
-def get_vdb_client(embeddings: OpenAIEmbeddings, collection_name='') -> QdrantClient:
+def get_vdb_for_chains(embeddings: OpenAIEmbeddings, collection_name='') -> QdrantClient:
     '''
-    Create and return a Langchain-wrapped Qdrant client (vector database).
+    Create and return a Langchain-wrapped Qdrant client (vector database),
+    optimized for usage in Langchain's chains.
     '''
-    client = QdrantClient(url=os.environ.get('QDRANT_URL'), prefer_grpc=True)
     return Qdrant(
-        client=client,
+        client=qd_client,
         collection_name=collection_name,
         embeddings=embeddings
     )
@@ -55,8 +60,9 @@ def store_embeddings(self, filepath: str, collection_name=''):
     try:
         docs = chunk_document(filepath)
         embeddings = get_embeddings_model()
-        qdrant = get_vdb_client(embeddings, collection_name=collection_name)
-        docsearch = qdrant.from_documents(docs, embeddings)
+        qdrant = get_vdb_for_chains(embeddings, collection_name=collection_name)
+        qdrant.add_texts(docs)
+        # docsearch = qdrant.from_documents(docs, embeddings)
     except Exception as e:
         logger.error('Embeddings storage failed, retrying after 5 seconds. Error: %s', e)
         raise self.retry(exc=e, countdown=5)
