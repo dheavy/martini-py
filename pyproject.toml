@@ -7,9 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-langchain = "^0.0.194"
+langchain = "^0.0.213"
 tiktoken = "^0.4.0"
-pypdf = "^3.9.1"
 pinecone-client = "^2.2.2"
 openai = "^0.27.8"
 django = "^4.2.2"
@@ -24,11 +23,15 @@ flower = "^1.2.0"
 uvicorn = "^0.22.0"
 qdrant-client = "^1.2.0"
 drf-yasg = "^1.21.6"
+bs4 = "^0.0.1"
+pdfminer-six = "^20221105"
 
 [tool.poetry.scripts]
 manage = "iac.scripts.scripts:manage"   # must be run in the "martini" directory (where manage.py is located)
-start-app = "iac.scripts.scripts:start_app"   # must be run in the "martini" directory (where manage.py is located)
+startapp = "iac.scripts.scripts:startapp"   # must be run in the "martini" directory (where manage.py is located)
+docker-prod = "iac.scripts.scripts:docker_prod"
 docker-reset = "iac.scripts.scripts:docker_reset"
+docker-clean = "iac.scripts.scripts:docker_clean"
 docker-down = "iac.scripts.scripts:docker_down"
 docker-up = "iac.scripts.scripts:docker_up"
 docker-logs = "iac.scripts.scripts:docker_logs"

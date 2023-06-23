@@ -16,15 +16,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path, re_path
+
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+
 from rest_framework import permissions
+from rest_framework.routers import DefaultRouter
+
+from apps.documents.views import (
+    UnstructuredDocumentViewSet,
+    DocumentCollectionViewSet
+)
+
+from apps.chats.views import MessageViewSet
 
 schema_view = get_schema_view(
    openapi.Info(
       title="Martini API",
       default_version='v1',
-      description="API documentation Martini",
+      description="API documentation for Martini",
       terms_of_service="",
       contact=openapi.Contact(email="davy.braun@ginetta.net"),
       license=openapi.License(name="MIT"),
@@ -33,12 +43,17 @@ schema_view = get_schema_view(
    permission_classes=(permissions.AllowAny,),
 )
 
+router = DefaultRouter()
+router.register(r'documents', UnstructuredDocumentViewSet)
+router.register(r'collections', DocumentCollectionViewSet)
+router.register(r'messages', MessageViewSet, basename='message')
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('api-auth/', include('rest_framework.urls')),
 
-    path('api/', include('apps.documents.urls')),
+    path('api/', include(router.urls)),
 
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

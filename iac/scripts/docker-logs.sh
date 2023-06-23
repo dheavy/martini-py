@@ -1,4 +1,4 @@
 #!/bin/bash
 
 echo "Starting logs for all Docker containers..."
-docker compose logs -f
+docker compose -f ../docker-compose.dev.yml logs -f
