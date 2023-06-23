@@ -11,7 +11,14 @@ def manage():
     Passes arguments to bash script so that you can run Django manage.py commands.
     '''
     args = sys.argv[1:]  # get command-line arguments
-    subprocess.run(['bash', f'{dir_path}/manage.sh'] + args, check=True)  # pass arguments to bash script
+    subprocess.run([
+        'bash',
+        f'{dir_path}/manage.sh'] + args, # pass arguments to bash script
+        check=True,
+        # Capture and print stdout/stderr from bash script.
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
 
 def start_app():
     args = sys.argv[1:]  # get command-line arguments
