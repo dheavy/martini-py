@@ -4,11 +4,16 @@ from django.db import migrations
 
 
 def create_default_documentcollection(apps, schema_editor):
+    from ..vectorstore import create_vectorstore_collection
+
+    slug = 'default'
     DocumentCollection = apps.get_model('documents', 'DocumentCollection')
     DocumentCollection.objects.create(
         name='default',
+        slug=slug,
         description='Default document collection',
     )
+    create_vectorstore_collection(slug)
 
 
 class Migration(migrations.Migration):

@@ -7,15 +7,6 @@ set +a
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Set some env vars to localhost to override the value in .env
-# currently set to the name of their container by Docker.
-# This is because Docker will read the value from .env and use it,
-# and we want to use localhost instead for local development.
-POSTGRES_HOST=localhost
-QDRANT_URL=http://localhost:6333
-CELERY_BROKER_URL=redis://localhost:32787/0
-CELERY_RESULT_BACKEND=redis://localhost:32787/0
-
 # Run Django manage.py commands. Example: ./manage.sh makemigrations.
 # Note: "$@" passes all arguments to the script.
 python manage.py "$@"

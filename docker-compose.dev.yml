@@ -1,0 +1,61 @@
+##
+# This composer is used for local development and testing.
+# It runs the following services:
+# - Postgres database
+# - Qdrant vector database
+#
+# Notice it does not run the Django application itself. You'll have to tun the Django application locally
+# (to benefit from hot-reloading) using the following command:
+# `poetry run manage runserver`
+#
+# Neither does it run the Celery worker. In fact, Celery is not used in local development
+# mostly because of a segfault bug on M1 machines when run workers are run locally.
+# I was not able to solve it despite reading issues/answers on Github and StackOverflow.
+# See:
+# - https://github.com/celery/celery/issues/7007
+# - https://github.com/celery/celery/issues/5867#issuecomment-564581217
+#
+# To run the stack, use the following command:
+# `docker-compose -f docker-compose.dev.yml up`
+#
+# To stop the stack, use the following command:
+# `docker-compose -f docker-compose.dev.yml down`
+#
+# To run the stack in the background, use the following command:
+# `docker-compose -f docker-compose.dev.yml up -d`
+##
+version: '3.8'
+
+services:
+  # Postgres database for the application
+  postgres:
+    # Use an image tailored for MacOS M1
+    image: amd64/postgres:14
+    platform: linux/amd64
+    environment:
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+    volumes:
+      - postgres_data:/var/lib/postgres/data/
+    ports:
+      - "5432:5432"
+    networks:
+      - martini_network
+
+  # Qdrant vector database
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"
+    networks:
+      - martini_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  martini_network:
+    driver: bridge

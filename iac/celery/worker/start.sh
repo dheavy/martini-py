@@ -3,7 +3,9 @@
 set -o errexit
 set -o nounset
 
-# watchfiles \
-#   --filter python \
-#   'celery -A celery worker --loglevel=info'
-celery -A celery worker
+# Assuming that this script is located at 'iac/celery/beat/start.bash',
+# and the Django project root is at the 'martini' directory, this helps
+# the celery beat process find the apps' modules and settings
+export PYTHONPATH=/app/martini:${PYTHONPATH:-}
+
+celery -A config.celery:celery worker -l info --pool=solo

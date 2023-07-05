@@ -10,11 +10,23 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+APP_ENV = os.environ.get('APP_ENV')
 
+# APP_ENV is set in docker-compose services only.
+# In local develoment, we need to set the environment variables to access the database and Qdrant
+# using "localhost" (the content of DJ_* environment variables) instead of the Docker container names.
+if APP_ENV == 'local':
+    os.environ['QDRANT_URL'] = os.environ.get('DJ_QDRANT_URL')
+    # We are not using Celery in local development (yet), because of an segfault error
+    # occurring when the local Celery worker tries to access Postgres (tested in M1 Macbook Pro).
+    # But change the environment variables anyway, in case this is fixed in the future.
+    os.environ['CELERY_BROKER_URL'] = os.environ.get('DJ_CELERY_BROKER_URL')
+    os.environ['CELERY_RESULT_BACKEND'] = os.environ.get('DJ_CELERY_RESULT_BACKEND')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -23,10 +35,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-nf6a&7k%wgd&pr4413awil^5hd04(*vkeyji$jp%@9-t_we*6o'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if APP_ENV == 'local' else False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+# Allowed hosts include localhost and web_nginx (the name of the nginx container).
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'web_nginx']
 
+# Ensure Django respects the header used to preserve the original host of the client request
+# when proxying through a load balancer or other reverse proxy
+# (necessary to allow web_nginx to be among the allowed hosts).
+USE_X_FORWARDED_HOST = True
 
 # Application definition
 
@@ -41,6 +58,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'config',
     'apps.documents',
+    'apps.chats',
 ]
 
 MIDDLEWARE = [
@@ -76,15 +94,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+POSTGRES_NAME_ENV_KEY = 'DJ_POSTGRES_NAME' if APP_ENV == 'local' else 'POSTGRES_DB'
+POSTGRES_USER_ENV_KEY = 'DJ_POSTGRES_USER' if APP_ENV == 'local' else 'POSTGRES_USER'
+POSTGRES_PASSWORD_ENV_KEY = 'DJ_POSTGRES_PASSWORD' if APP_ENV == 'local' else 'POSTGRES_PASSWORD'
+POSTGRES_HOST_ENV_KEY = 'DJ_POSTGRES_HOST' if APP_ENV == 'local' else 'POSTGRES_HOST'
+POSTGRES_PORT_ENV_KEY = 'DJ_POSTGRES_PORT' if APP_ENV == 'local' else 'POSTGRES_PORT'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB'),
-        'USER': os.environ.get('POSTGRES_USER'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-        'PORT': os.environ.get('POSTGRES_PORT', 5432),
+        'NAME': os.environ.get(POSTGRES_NAME_ENV_KEY),
+        'USER': os.environ.get(POSTGRES_USER_ENV_KEY),
+        'PASSWORD': os.environ.get(POSTGRES_PASSWORD_ENV_KEY),
+        'HOST': os.environ.get(POSTGRES_HOST_ENV_KEY),
+        'PORT': os.environ.get(POSTGRES_PORT_ENV_KEY),
     }
 }
 
@@ -124,7 +146,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+UPLOAD_URL = 'static/uploads/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'static', 'uploads')
+
+# Media root from Docker container's perspective.
+MEDIA_ROOT_DOCKER = '/app/martini/static/uploads'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -141,3 +168,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ]
 }
+
+MARTINI_DEFAULT_COLLECTION_NAME = 'default'
+MARTINI_DEFAULT_TEXT_SPLITTER_CHUNK_SIZE = 500
+MARTINI_DEFAULT_TEXT_SPLITTER_CHUNK_OVERLAP = 50

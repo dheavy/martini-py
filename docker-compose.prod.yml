@@ -1,0 +1,176 @@
+##
+# This composer provides the self-contained environment for the Martini application, in "production" mode.
+#
+# It is based on the following services:
+# - web: the Django application exposing the API and the admin interface.
+# - web_nginx: the Nginx server, reverse proxying the Django application.
+# - postgres: the PostgreSQL database, storing the application data from the Django app.
+# - redis: the Redis server, used by Celery to store the tasks.
+# - celery_worker: the Celery worker, executing the tasks (e.g. async document processing).
+# - celery_beat: the Celery scheduler, scheduling the tasks.
+# - celery_flower: the Celery Flower server, providing a web interface to monitor the Celery tasks.
+# - qdrant: the Qdrant server, providing the vector search engine.
+#
+# The following volume is used:
+# - static_volume: the volume storing the static files of the Django application, shared by the web and celery_worker services.
+#
+##
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: iac/django/Dockerfile
+    image: martini_web
+    command: ./start.sh
+    environment:
+      - APP_ENV=production
+      - APP_SUPERUSER_NAME
+      - APP_SUPERUSER_PWD
+      - APP_SUPERUSER_EMAIL
+      - DATABASE_URL
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - CELERY_BROKER_URL
+      - CELERY_RESULT_BACKEND
+      - OPENAI_API_KEY
+      - QDRANT_URL
+      - EMBEDDINGS_DIMENSION_OPENAI
+    volumes:
+      - static_volume:/app/martini/static
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - martini_network
+
+  web_nginx:
+    build:
+      context: .
+      dockerfile: iac/django/Dockerfile.nginx
+    volumes:
+      - static_volume:/app/martini/static
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - martini_network
+
+  postgres:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgres/data/
+    environment:
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "martini"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    networks:
+      - martini_network
+
+  redis:
+    image: redis:6-alpine
+    restart: unless-stopped
+    networks:
+      - martini_network
+    ports:
+      - 127.0.0.1:32787:6379
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: iac/django/Dockerfile
+    image: martini_worker
+    command: ./start-celery-worker.sh
+    volumes:
+      - static_volume:/app/martini/static
+    environment:
+      - APP_ENV=production
+      - CELERY_BROKER_URL
+      - CELERY_RESULT_BACKEND
+      - DATABASE_URL
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - QDRANT_URL
+      - OPENAI_API_KEY
+      - EMBEDDINGS_DIMENSION_OPENAI
+    restart: unless-stopped
+    networks:
+      - martini_network
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: iac/django/Dockerfile
+    image: martini_beat
+    command: ./start-celery-beat.sh
+    environment:
+      - APP_ENV=production
+      - CELERY_BROKER_URL
+      - CELERY_RESULT_BACKEND
+      - DATABASE_URL
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - OPENAI_API_KEY
+      - QDRANT_URL
+    restart: unless-stopped
+    networks:
+      - martini_network
+
+  celery_flower:
+    build:
+      context: .
+      dockerfile: iac/django/Dockerfile
+    image: martini_flower
+    command: ./start-celery-flower.sh
+    environment:
+      - APP_ENV=production
+      - CELERY_BROKER_URL
+      - CELERY_RESULT_BACKEND
+      - OPENAI_API_KEY
+      - DATABASE_URL
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - QDRANT_URL
+    restart: unless-stopped
+    ports:
+      - 5557:5555
+    networks:
+      - martini_network
+
+  qdrant:
+    image: qdrant/qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    networks:
+      - martini_network
+
+volumes:
+  static_volume:
+  postgres_data:
+
+networks:
+  martini_network:
+    driver: bridge

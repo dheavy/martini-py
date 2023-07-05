@@ -1,4 +1,4 @@
 #!/bin/bash
 
-echo "Building Docker containers and starting services..."
-docker compose up --build -d
+echo "Rebuilding and starting services..."
+docker compose -f ../docker-compose.dev.yml up --build -d
