@@ -7,6 +7,9 @@ class UnstructuredDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnstructuredDocument
         fields = ['id', 'name', 'description', 'file', 'task_id', 'collection']
+        extra_kwargs = {
+            'collection': {'required': False}
+        }
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
