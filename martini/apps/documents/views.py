@@ -121,8 +121,9 @@ class UnstructuredDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='status')
     def get_task_status(self, request, pk=None):
         '''
-        Generate a /api/documents/{pk}/status endpoint to check
-        the status of a related Celery task (e.g. processing embeddings).
+        Generate a /api/documents/{id}/status endpoint to query the status of a Document's current processing task.
+        Because upload is synchronous but processing embeddings is not, this endpoint is necessary to check the status
+        of the processing task from a frontend client.
         '''
         instance = self.get_object()
         task_id = instance.task_id
