@@ -164,7 +164,7 @@ You will receive a response similar to the one below.
 ```bash
 {
   "status": "PENDING", # PENDING if waiting to start, then STARTED, SUCCESS when finished, RETRY if retrying after a failure, FAILURE if failed after max retries
-  "deTail": "..."  # if any
+  "detail": "..."  # if any
 }
 ```
 
