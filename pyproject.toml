@@ -36,6 +36,13 @@ docker-down = "iac.scripts.scripts:docker_down"
 docker-up = "iac.scripts.scripts:docker_up"
 docker-logs = "iac.scripts.scripts:docker_logs"
 docker-web = "iac.scripts.scripts:docker_web"
+docker-web-nginx = "iac.scripts.scripts:docker_web_nginx"
+docker-celery-beat = "iac.scripts.scripts:docker_celery_beat"
+docker-celery-worker = "iac.scripts.scripts:docker_celery_worker"
+docker-celery-flower = "iac.scripts.scripts:docker_celery_flower"
+docker-postgres = "iac.scripts.scripts:docker_postgres"
+docker-qdrant = "iac.scripts.scripts:docker_qdrant"
+docker-redis = "iac.scripts.scripts:docker_redis"
 
 [build-system]
 requires = ["poetry-core"]

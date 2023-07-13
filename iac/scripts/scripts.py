@@ -34,26 +34,26 @@ def docker_prod():
 
 def docker_clean():
     '''
-    Builds and runs the application in production mode.
+    Stop, then turn off and remove all Docker containers, images and volumes for the application.
     '''
     subprocess.run(['bash', f'{dir_path}/docker-clean.sh'], check=True)
 
 def docker_reset():
     '''
-    Stops, then turns off and removes all Docker containers, images and volumes for the application.
+    Stop, then turn off and remove all Docker containers, images and volumes for the application.
     Then rebuilds and re-runs the application.
     '''
     subprocess.run(['bash', f'{dir_path}/docker-reset.sh'], check=True)
 
 def docker_down():
     '''
-    Stops, then turns off and removes all Docker containers and volumes for the application.
+    Shutdown containers.
     '''
     subprocess.run(['bash', f'{dir_path}/docker-down.sh'], check=True)
 
 def docker_up():
     '''
-    Builds and runs the application.
+    Build and start containers in development mode.
     '''
     subprocess.run(['bash', f'{dir_path}/docker-up.sh'], check=True)
 
