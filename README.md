@@ -315,6 +315,7 @@ TBD
 
 Here is a list of features to be added. It is non-exhaustive and currently unordered.
 
+- **Replace LangChain with lighweight library, or custom code implementing most functions and [ReAct flow](https://arxiv.org/abs/2210.03629)** (LangChain ultimately gets in the way with too much bloat and abstraction with little production value 🙁)
 - More processable document types.
 - More LLMs.
 - Finer control and/or removal of monitoring tools (Qdrant UI, Celery Flower...) in production.
